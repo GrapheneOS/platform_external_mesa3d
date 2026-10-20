@@ -6485,6 +6485,10 @@ VkResult ResourceTracker::on_vkQueueSubmitTemplate(void* context, VkResult input
         }
     }
 #endif
+    // Another encoder can allocate an earlier sequence number, then need mLock
+    // to unregister a destroyed resource before flushing its command. Holding
+    // mLock while waiting for the host would deadlock both command streams.
+    lock.unlock();
     VkResult waitIdleRes = VK_SUCCESS;
     if (externalFenceFdToSignal >= 0 || !post_wait_events.empty() || !post_wait_sync_fds.empty()) {
         auto hostConn = ResourceTracker::threadingCallbacks.hostConnectionGetFunc();
